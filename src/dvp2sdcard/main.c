@@ -282,6 +282,7 @@ int main(void)
             }
             else{
                 printf("BMP -> JPG Success! filename : %s\r\n", fileout);
+                f_unlink(filename2);
             }
             
             g_save_flag = 0;
