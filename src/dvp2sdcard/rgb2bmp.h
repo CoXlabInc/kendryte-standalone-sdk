@@ -1,7 +1,9 @@
+
 #ifndef _RGB2BMP_H
 #define _RGB2BMP_H
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define BI_BITFIELDS    0x3
 
@@ -35,6 +37,12 @@ typedef struct tagRGBQUAD{
 	uint8_t rgbReserved;/* reserved */
 }__attribute__((packed)) RgbQuad;
 
-int rgb565tobmp(uint8_t *buf,int width,int height, const char *filename);
+typedef struct tagRGBTRIPLE {
+  uint8_t rgbtBlue;
+  uint8_t rgbtGreen;
+  uint8_t rgbtRed;
+}__attribute__((packed)) RGBTriple;
 
+int rgb565tobmp(uint8_t *buf,int width,int height, const char *filename);
+int rgb888tobmp(uint8_t *buf,int width,int height, const char *filename);
 #endif

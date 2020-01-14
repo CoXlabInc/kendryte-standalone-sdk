@@ -29,6 +29,10 @@
 #include "rgb2bmp.h"
 #include "gpiohs.h"
 #include "iomem.h"
+#include "tiny_jpeg.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 /* SPI and DMAC usage
  *
@@ -241,7 +245,6 @@ int main(void)
     g_dvp_finish_flag = 0;
     dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
-
     uint16_t i = 0;
     while (1)
     {
@@ -253,10 +256,35 @@ int main(void)
 
         if (g_save_flag)
         {
-            char filename[15];
-            sprintf(filename, "0:%04X.bmp", i++);
-            printf("Filename: %s\r\n", filename);
-            rgb565tobmp((uint8_t*)(g_ram_mux ? g_lcd_gram0 : g_lcd_gram1), 320, 240, _T(filename));
+            int width, height, num_components;
+            width = 320;
+            height = 240;
+            num_components = 3;
+            char filename2[15];
+            char fileout[15];
+            sprintf(filename2, "0:%04X.BMP", i++);
+            sprintf(fileout,"0:%04x.jpg",(i-1));
+            //filename , fileout definition
+
+            // rgb565tobmp((uint8_t*)(g_ram_mux ? g_lcd_gram0 : g_lcd_gram1), 320, 240, _T(filename2));
+            rgb888tobmp((uint8_t*)(g_ram_mux ? g_lcd_gram0 : g_lcd_gram1), 320, 240, _T(filename2));
+            // choose 16bit bmp or 24bit bmp
+
+            unsigned char* data = stbi_load(filename2, &width, &height, &num_components, 0);
+            //load data from bitmap file
+            if ( !data ) {
+            puts("Could not find file");
+            }
+
+            //convert bitmap data to jpeg file
+            if ( !tje_encode_to_file(fileout, width, height, num_components, data) ) {
+            fprintf(stderr, "Could not write JPEG\n");
+            }
+            else{
+                printf("BMP -> JPG Success! filename : %s\r\n", fileout);
+                f_unlink(filename2);
+            }
+            
             g_save_flag = 0;
         }
         /* display pic*/        
@@ -265,5 +293,8 @@ int main(void)
     iomem_free(g_lcd_gram0);
     iomem_free(g_lcd_gram1);
     return 0;
+
+
+    
 }
 
