@@ -6,14 +6,13 @@ DVP2SDCARD_DEV
     this directory, mark1.py
 ---------------------------------------
 2. How to use  
-    1)  
-    1-1) using kflash.py build this project and run  
-    1-2) connect board with your Computer containing the mark1.py  
-    1-3) GPIO 6 rx GPIO 7 TX (you can change by main.c function name [io_mux_init] )  
     
-    2) run mark1.py (python mark1.py)  
     
-    3) mark1.py option  
+    1) using kflash.py build this project and run  
+    2) connect board with your Computer containing the mark1.py  
+    3) GPIO 6 rx GPIO 7 TX (you can change by main.c function name [io_mux_init] )  
+    4) run mark1.py (python mark1.py)  
+    5) mark1.py option  
     
     | Name | Param | Usage |
     |------|---|---|
