@@ -184,7 +184,7 @@ int main(void)
 
     char recv = 0;
 
-    // flag for byte matching 
+    // flag for byte matching
     int rec_flag = 0;
     int img_flag = 0;
 
@@ -201,7 +201,6 @@ int main(void)
     char calcchecksum;
     char msg_type = '\0';
     int snap_size = 0;
-    int chunkflag = 0;
 
     int img_size = 0;
     char *img_data = NULL;
@@ -320,7 +319,13 @@ int main(void)
                     if(i >= RECV_LENTH)
                     {
                         i = 0;
-                        if(msg_type == 0x00) { rec_flag = 2; } else{ rec_flag = 4; }
+                        if(msg_type == 0x00)
+                        {
+                            rec_flag = 2;
+                        } else
+                        {
+                            rec_flag = 4;
+                        }
                     }
                     break;
                 case 2: // format [ case : msg_type == 0x00 ]
@@ -330,7 +335,7 @@ int main(void)
                 case 3: // checksum [ case : msg_type == 0x00 ]
                     checksum = recv;
                     calcchecksum = length[0] + length[1] + format;
-                    if(calcchecksum == checksum)
+                    if( (calcchecksum == checksum) || (length[0] != 0x00) )
                     {
                         calcchecksum = 0;
                         printf("request successfully received\r\n");
@@ -341,6 +346,8 @@ int main(void)
                         num_components = 3;
                         char filename2[15];
                         char fileout[15];
+                        int quality = 1;
+                        if ((format == 0x01) | (format == 0x02) | (format == 0x03)) { quality = format; }
                         if(g_save_flag) // take a pic & convert & save transaction
                         {
 
@@ -357,7 +364,7 @@ int main(void)
                                 puts("Could not find file");
                             }
                             //convert bitmap data to jpeg file
-                            int encoderesult = tje_encode_to_file(fileout, width, height, num_components, data);
+                            int encoderesult = tje_encode_to_file_at_quality(fileout, quality, width, height, num_components, data);
                             snap_size = encoderesult; //save size of pic in snap_size
                             if(!encoderesult)
                             {
@@ -403,12 +410,21 @@ int main(void)
                         }
                         payload[8 + sn_fnsize] = snap_checksum;
                         uart_send_data(UART_NUM, payload, (8 + sn_fnsize + 1));
-                    }
-                    else{
-                        char errmsg[14] = "CHECKSUM-ERROR";
-                        uart_send_data(UART_NUM, errmsg , 14);
+                    } else
+                    {
+                        printf("[0x00] Checksum or Length err recv[0x%x] <-> calc[0x%x]\r\n",checksum,calcchecksum);
+                        
+                        if (length[0] == 0x00){
+                            char errmsg[15] = "LENGTH[0]_ERROR";
+                            uart_send_data(UART_NUM, errmsg, 15);
+                        }
+                        else{
+                            char errmsg[14] = "CHECKSUM_ERROR";
+                            uart_send_data(UART_NUM, errmsg, 14);
+                        }                        
                     }
                     rec_flag = 0;
+                    printf("send OK! \r\n");
                     break;
                 case 4: //msg_type 0x02
                     if(img_flag == 0)
@@ -446,76 +462,78 @@ int main(void)
                     } else
                     {
                         checksum = recv;
-                        printf("checksum : %x\r\n",checksum);
                         calcchecksum = msg_type;
                         calcchecksum += length[0] + length[1];
                         calcchecksum += offset[0] + offset[1] + offset[2] + offset[3];
                         calcchecksum += file_len[0] + file_len[1];
                         calcchecksum += fn_size;
-                        for (int i = 0 ; i < fn_size ; i++){
+                        for(int i = 0; i < fn_size; i++)
+                        {
                             calcchecksum += rec_filename[i];
                         }
-                        printf("calcchecksum : %x\r\n", calcchecksum);
+                        if(checksum == calcchecksum)
+                        {
+                            uint16_t file_len_2 = (file_len[1] << 8) | file_len[0];
+                            printf("[file len2] = %d\r\n", file_len_2);
 
-                        uint16_t file_len_2 = (file_len[1] << 8) | file_len[0];
-                        printf("[file len2] = %d\r\n", file_len_2);
+                            uint8_t ch_payload[2000];
+                            uint8_t ch_type = 0x03;
 
-                        uint8_t ch_payload[2000];
-                        uint8_t ch_type = 0x03;
-                        
-                        ch_payload[0] = ch_type; //type
+                            ch_payload[0] = ch_type; //type
 
-                        uint32_t offset_4 = (offset[3] << 24) | (offset[2] << 16) | (offset[1] << 8) | offset[0];
-                        
-                        FIL tmpfile;
-                        FRESULT tmpret = FR_OK;
-                        printf("offset_4 = %d\r\n", offset_4);
-                        if (chunkflag == 0){
+                            uint32_t offset_4 = (offset[3] << 24) | (offset[2] << 16) | (offset[1] << 8) | offset[0];
+
+                            FIL tmpfile;
+                            FRESULT tmpret = FR_OK;
+                            printf("offset_4 = %d\r\n", offset_4);
+
                             tmpret = f_open(&tmpfile, rec_filename, FA_READ);
-                            // f_lseek(&tmpfile, f_size(&tmpfile));
-                            // img_size = f_tell(&tmpfile); // calc image size
                             f_lseek(&tmpfile, offset_4);
                             img_data = malloc(file_len_2); // memory allocation size = image size
-                            // f_lseek(&tmpfile, 0); // move pointer to top of file
                             FRESULT readret = f_read(&tmpfile, img_data, file_len_2, (void *)&bytesread); //read file and move to img_size
-                            printf("[DEBUG] read RESULT : [%d]\r\n",readret); 
+                            printf("[DEBUG] read RESULT : [%d]\r\n", readret);
                             f_close(&tmpfile); //close file pointer
-                            // chunkflag = 1;
-                        }
-                        if(tmpret != FR_OK)
-                        {
-                            printf("open file error len : %d\r\n", fn_size);
-                            printf("open file [%s] err[%d]\n", rec_filename, tmpret);
-                            char *open_err_msg = "file open Err";
-                            uart_send_data(UART_NUM, open_err_msg, strlen(open_err_msg));
-                            chunkflag = 0;
+                            
+                            if(tmpret != FR_OK)
+                            {
+                                printf("open file error len : %d\r\n", fn_size);
+                                printf("open file [%s] err[%d]\n", rec_filename, tmpret);
+                                char *open_err_msg = "file open Err";
+                                uart_send_data(UART_NUM, open_err_msg, strlen(open_err_msg));
+                            } else
+                            {
+                                printf("[DEBUG] rec filename : [%s] \r\n", rec_filename);
+                                for(int i = (file_len_2 - 1), j = 3; i >= 0; i--, j++)
+                                {
+                                    // printf("0x%x ,",img_data[i]);
+                                    ch_payload[j] = img_data[i];
+                                    if(i == offset_4)
+                                    {
+                                        break;
+                                    }
+                                }
+                                uint16_t ch_len = file_len_2;
+                                ch_payload[2] = (ch_len >> 8) & 0xff;
+                                ch_payload[1] = ch_len & 0xff; //LSB first order
+
+                                //checksum
+                                uint8_t khecksum = 0;
+                                for(int i = 0; i < (3 + ch_len); i++)
+                                {
+                                    khecksum += ch_payload[i];
+                                }
+                                ch_payload[3 + ch_len] = khecksum; // checksum
+
+                                uart_send_data(UART_NUM, ch_payload, (3 + ch_len + 1));
+                                printf("ch_len : %d\r\n", ch_len);
+                            }
+                            free(img_data);
                         } else
                         {
-                            printf("[DEBUG] rec filename : [%s] \r\n", rec_filename);
-                            for(int i = (file_len_2-1), j = 3; i >= 0; i--, j++)
-                            {
-                                // printf("0x%x ,",img_data[i]);
-                                ch_payload[j] = img_data[i];
-                                if (i == offset_4){
-                                    break;
-                                }
-                            }
-                            uint16_t ch_len = file_len_2;
-                            ch_payload[2] = (ch_len >> 8) & 0xff;
-                            ch_payload[1] = ch_len & 0xff; //LSB first order
-
-                            //checksum
-                            uint8_t khecksum = 0;
-                            for(int i = 0; i < (3 + ch_len); i++)
-                            {
-                                khecksum += ch_payload[i];
-                            }
-                            ch_payload[3 + ch_len] = khecksum; // checksum
-
-                            uart_send_data(UART_NUM, ch_payload, (3 + ch_len + 1));
-                            printf("ch_len : %d\r\n", ch_len);
+                            printf("[0x02] err checksum not match recv[0x%x] <-> calc[0x%x]\r\n",checksum,calcchecksum);
+                            char errmsg[14] = "CHECKSUM-ERROR";
+                            uart_send_data(UART_NUM, errmsg, 14);
                         }
-                        free(img_data);
                         rec_flag = 0;
                         img_flag = 0;
                         printf(" -------------finish line----------\r\n");

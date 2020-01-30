@@ -1094,9 +1094,6 @@ int tje_encode_to_file(const char* dest_path,
 {
     filesize = 0; //init filesize
     int res = tje_encode_to_file_at_quality(dest_path, 1, width, height, num_components, src_data);
-    if (res == 1){
-        return filesize;
-    }
     return res;
 }
 
@@ -1115,6 +1112,7 @@ int tje_encode_to_file_at_quality(const char* dest_path,
                                   const int num_components,
                                   const unsigned char* src_data)
 {
+    filesize = 0; //init filesize
     FIL fsk;
     FIL* file = &fsk;
     FRESULT ret = FR_OK;
@@ -1129,6 +1127,9 @@ int tje_encode_to_file_at_quality(const char* dest_path,
 
     result |= 0 == f_close(file);
 
+    if (result == 1){
+        return filesize;
+    }
     return result;
 }
 
