@@ -200,7 +200,6 @@ int main(void)
     char fn_size = '\0';
     char rec_filename[20];
 
-    
     int i = 0;
     int j = 0;
 
@@ -389,14 +388,22 @@ int main(void)
                             }
                             //convert bitmap data to jpeg file
                             int encoderesult = tje_encode_to_file_at_quality(fileout, quality, width, height, num_components, data);
-                            snap_size = encoderesult; //save size of pic in snap_size
+                            
                             if(!encoderesult)
                             {
                                 fprintf(stderr, "Could not write JPEG\n");
                             } else
                             {
-                                printf("BMP -> JPG Success! filename : %s\r\n", fileout);
-                                f_unlink(filename2);
+                                printf("BMP , JPG Success! filename : %s , %s\r\n", filename2, fileout);
+                                if(format == 0x00)
+                                {
+                                    f_unlink(fileout);
+                                    snap_size = 230454;
+                                } else
+                                {
+                                    f_unlink(filename2);
+                                    snap_size = encoderesult; //save size of pic in snap_size
+                                }
                             }
                             free(data); // after data convert, free memory
                             g_save_flag = 0;
@@ -415,9 +422,19 @@ int main(void)
 
                         uint16_t sn_fnsize = strlen(fileout); //filename size
                         payload[7] = sn_fnsize;
-                        for(int i = 8; i < (8 + sn_fnsize); i++)
+                        if(format == 0x00)
                         {
-                            payload[i] = fileout[i - 8];
+                            sn_fnsize = strlen(filename2);
+                            for(int i = 8; i < (8 + sn_fnsize); i++)
+                            {
+                                payload[i] = filename2[i - 8];
+                            }
+                        } else
+                        {
+                            for(int i = 8; i < (8 + sn_fnsize); i++)
+                            {
+                                payload[i] = fileout[i - 8];
+                            }
                         }
 
                         uint16_t sn_length = (0x0004 + 0x0001 + sn_fnsize);
@@ -564,32 +581,33 @@ int main(void)
                         // printf(" -------------finish line----------\r\n");
                     }
                     break;
-                case 5:
+                case 5: //msg_type 0x04
                     ymdhms[rtcoffset++] = recv;
-                    if (rtcoffset >= 8)
+                    if(rtcoffset >= 8)
                     {
                         //ymdhms [0~6] : ymdhms [7] : checksum
                         uint8_t rtc_checksum = msg_type + length[0] + length[1];
-                        for (int i = 0 ; i < 7; i++){
+                        for(int i = 0; i < 7; i++)
+                        {
                             rtc_checksum += ymdhms[i];
                         }
-                        if (ymdhms[7] == rtc_checksum){
-                            uint16_t recv_year = ymdhms[1] << 8 | ymdhms[0] ; // uint8_t [year] merge
-                            rtc_timer_set(recv_year,ymdhms[2],ymdhms[3],ymdhms[4],ymdhms[5],ymdhms[6]);
-                            printf("timer set OK [%d:%d:%d:%d:%d:%d]\r\n", recv_year,ymdhms[2],ymdhms[3],ymdhms[4],ymdhms[5],ymdhms[6]);
-                            uint8_t getRTC[4] = { 0x05, 0x00, 0x00, 0x05};
+                        if(ymdhms[7] == rtc_checksum)
+                        {                                                    //if checksum ok, setRTC and msg send
+                            uint16_t recv_year = ymdhms[1] << 8 | ymdhms[0]; // uint8_t [year] merge
+                            rtc_timer_set(recv_year, ymdhms[2], ymdhms[3], ymdhms[4], ymdhms[5], ymdhms[6]);
+                            printf("timer set OK [%d:%d:%d:%d:%d:%d]\r\n", recv_year, ymdhms[2], ymdhms[3], ymdhms[4], ymdhms[5], ymdhms[6]);
+                            uint8_t getRTC[4] = {0x05, 0x00, 0x00, 0x05};
                             uart_send_data(UART_NUM, getRTC, 4);
-                        }
-                        else{
-                            printf("error! ymdhms[7] = 0x%x #### rtc_checksum = 0x%x\r\n", ymdhms[7],rtc_checksum);
+                        } else
+                        { //error occur!
+                            printf("error! ymdhms[7] = 0x%x #### rtc_checksum = 0x%x\r\n", ymdhms[7], rtc_checksum);
                             char errmsg[14] = "CHECKSUM-ERROR";
-                            uart_send_data(UART_NUM,errmsg,14);
+                            uart_send_data(UART_NUM, errmsg, 14);
                         }
                         rtcoffset = 0;
                         rec_flag = 0;
                     }
                     break;
-
             }
         }
         lcd_draw_picture(0, 0, 320, 240, g_ram_mux ? g_lcd_gram0 : g_lcd_gram1);

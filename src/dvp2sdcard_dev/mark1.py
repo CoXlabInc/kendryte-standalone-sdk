@@ -5,19 +5,17 @@ import time
 def makeYMDHMS(recvstr):
     ymdhms_byte = bytearray()
     year = int(recvstr[0:4]).to_bytes(2,"little")
-    print(year)
     month = bytes([int(recvstr[4:6])])
     day = bytes([int(recvstr[6:8])])
     hour = bytes([int(recvstr[8:10])])
     minute = bytes([int(recvstr[10:12])])
     second = bytes([int(recvstr[12:14])])
     ymdhms_byte.append(0x04)
-    ymdhms_byte.append(0x06)
+    ymdhms_byte.append(0x07)
     ymdhms_byte.append(0x00)
     ymdhms_byte = ymdhms_byte + year + month + day + hour + minute + second
     rtc_check = checksumCalc(ymdhms_byte)
     ymdhms_byte.append(rtc_check)
-    print(ymdhms_byte)
     return ymdhms_byte
 
 def modcalc(filesize):
@@ -50,23 +48,17 @@ def makeSnap(Format):
     Snap = bytearray()
     checksum = 0x00
     
-    length = bytelen(Format)
-    hexlength = hex(length)
-    
-    mask = 0xff
     msgType = 0x00
 
     Snap.append(msgType) #type
     checksum = checksum + msgType #add msgtype byte to checksum
-    
-    for i in range(0,2): #Length
-        j = i*8
-        msglength = int(hexlength,16) >> j & mask
-        Snap.append(msglength)
-        checksum = checksum + msglength # add msglength byte to checksum
+    Snap.append(0x01)
+    Snap.append(0x00)
+    checksum = checksum + 0x01 # add msglength byte to checksum
     Snap.append(Format) #Format
     checksum = checksum + Format # add Format byte to checksum
     Snap.append(checksum) #Checksum
+    print(Snap)
     return Snap 
 
 ser = serial.Serial(port='COM12', 
@@ -126,7 +118,8 @@ while 1:
         ser.write(Snap)
         payload = ser.read(17)
     elif (a == "4"):
-        print("[putdown Year Month day Hour Minute Second] ->>>>>>>>>>>> ",end="")
+        print("[putdown Year Month day Hour Minute Second]")
+        print("[ ex) year [2019] month [3] day [21] time [14:30:15] -> 20190321143015 ] ->>>>>>>>>>>> ",end="")
         ymdhms = makeYMDHMS(input())
         ser.write(ymdhms)
         payload = ser.read(4)
