@@ -9,6 +9,8 @@
 
 #include "diskio.h"		/* FatFs lower layer API */
 #include "sdcard.h"
+#include "rtc.h"
+#include <stdio.h>
 
 /* Definitions of physical drive number for each drive */
 #define M0		0	/* Example: Map MMC/SD card to physical drive 0 */
@@ -96,4 +98,20 @@ DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff)
 		res = RES_PARERR;
 	}
 	return res;
+}
+
+/*-----------------------------------------------------------------------*/
+/* RTC configuration func                                                */
+/*-----------------------------------------------------------------------*/
+
+DWORD get_fattime(){
+	
+	int year;
+    int month;
+    int day;
+    int hour;
+    int minute;
+    int second;
+    rtc_timer_get(&year, &month, &day, &hour, &minute, &second);
+	return ( (DWORD)(year - 1980) << 25 | (DWORD)month << 21 | (DWORD)day << 16 | (DWORD)hour << 11 | (DWORD)minute << 5 | (DWORD)second );
 }

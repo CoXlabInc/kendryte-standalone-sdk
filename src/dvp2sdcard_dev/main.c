@@ -26,6 +26,7 @@
 #include "ov5640.h"
 #include "plic.h"
 #include "rgb2bmp.h"
+#include "rtc.h" //for rtc set
 #include "sdcard.h"
 #include "sysctl.h"
 #include "tiny_jpeg.h"
@@ -174,13 +175,13 @@ static void io_set_power(void)
 
 int main(void)
 {
+    rtc_init();
+    // RTC INIT --------------------- for test
+    rtc_timer_set(2019, 12, 20, 9, 0, 0);
     // UART INIt ----------------------
     gpiohs_set_drive_mode(3, GPIO_DM_OUTPUT);
     gpio_pin_value_t value = GPIO_PV_HIGH;
     gpiohs_set_pin(3, value);
-
-    uart_init(UART_NUM);
-    uart_configure(UART_NUM, 115200, 8, UART_STOP_1, UART_PARITY_NONE);
 
     char recv = 0;
 
@@ -188,23 +189,34 @@ int main(void)
     int rec_flag = 0;
     int img_flag = 0;
 
+    // public variable
     char length[2];
+    char msg_type = '\0';
+    // 2-1 Snap
+    char format = 0;
+    // 2-3 getImage
     uint8_t offset[4];
     char file_len[2];
     char fn_size = '\0';
     char rec_filename[20];
-    char format = 0;
+
+    
     int i = 0;
     int j = 0;
 
     char checksum;
     char calcchecksum;
-    char msg_type = '\0';
+
     int snap_size = 0;
 
     int img_size = 0;
     char *img_data = NULL;
     uint32_t bytesread;
+
+    // 2-5 setRTC
+    uint8_t ymdhms[8]; //y(2) m(1) d(1) h(1) m(1) s(1) + checksum
+    int rtcoffset = 0;
+
     // -----------------------------------------
     FATFS sdcard_fs;
 
@@ -297,6 +309,9 @@ int main(void)
     g_dvp_finish_flag = 0;
     dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
+
+    uart_init(UART_NUM);
+    uart_configure(UART_NUM, 115200, 8, UART_STOP_1, UART_PARITY_NONE);
     uint16_t jpgnum = 0;
     while(1)
     {
@@ -305,26 +320,32 @@ int main(void)
             ;
         g_ram_mux ^= 0x01;
         g_dvp_finish_flag = 0;
-
         while(uart_receive_data(UART_NUM, &recv, 1))
         {
             switch(rec_flag)
             {
                 case 0: //type
                     msg_type = recv;
-                    (msg_type == 0x00) || (msg_type == 0x02) ? (rec_flag = 1) : rec_flag;
+                    (msg_type == 0x00) || (msg_type == 0x02) || (msg_type == 0x04) ? (rec_flag = 1) : rec_flag;
                     break;
                 case 1: //Length
                     length[i++] = recv;
+                    // if (length[0] == 0x00){
+                    //     recv;
+                    //     break;
+                    // }
                     if(i >= RECV_LENTH)
                     {
                         i = 0;
                         if(msg_type == 0x00)
                         {
                             rec_flag = 2;
-                        } else
+                        } else if(msg_type == 0x02)
                         {
                             rec_flag = 4;
+                        } else
+                        {
+                            rec_flag = 5;
                         }
                     }
                     break;
@@ -335,7 +356,7 @@ int main(void)
                 case 3: // checksum [ case : msg_type == 0x00 ]
                     checksum = recv;
                     calcchecksum = length[0] + length[1] + format;
-                    if( (calcchecksum == checksum) || (length[0] != 0x00) )
+                    if((calcchecksum == checksum) && (length[0] != 0x00))
                     {
                         calcchecksum = 0;
                         printf("request successfully received\r\n");
@@ -347,7 +368,10 @@ int main(void)
                         char filename2[15];
                         char fileout[15];
                         int quality = 1;
-                        if ((format == 0x01) | (format == 0x02) | (format == 0x03)) { quality = format; }
+                        if((format == 0x01) | (format == 0x02) | (format == 0x03))
+                        {
+                            quality = format;
+                        }
                         if(g_save_flag) // take a pic & convert & save transaction
                         {
 
@@ -412,16 +436,17 @@ int main(void)
                         uart_send_data(UART_NUM, payload, (8 + sn_fnsize + 1));
                     } else
                     {
-                        printf("[0x00] Checksum or Length err recv[0x%x] <-> calc[0x%x]\r\n",checksum,calcchecksum);
-                        
-                        if (length[0] == 0x00){
+                        printf("[0x00] Checksum or Length err recv[0x%x] <-> calc[0x%x]\r\n", checksum, calcchecksum);
+                        printf("[0x00] [0x%x] [0x%x] [0x%x] [0x%x] \r\n", msg_type, length[0], length[1], format);
+                        if(length[0] == 0x00)
+                        {
                             char errmsg[15] = "LENGTH[0]_ERROR";
                             uart_send_data(UART_NUM, errmsg, 15);
-                        }
-                        else{
+                        } else
+                        {
                             char errmsg[14] = "CHECKSUM_ERROR";
                             uart_send_data(UART_NUM, errmsg, 14);
-                        }                        
+                        }
                     }
                     rec_flag = 0;
                     printf("send OK! \r\n");
@@ -474,7 +499,7 @@ int main(void)
                         if(checksum == calcchecksum)
                         {
                             uint16_t file_len_2 = (file_len[1] << 8) | file_len[0];
-                            printf("[file len2] = %d\r\n", file_len_2);
+                            // printf("[file len2] = %d\r\n", file_len_2);
 
                             uint8_t ch_payload[2000];
                             uint8_t ch_type = 0x03;
@@ -485,15 +510,15 @@ int main(void)
 
                             FIL tmpfile;
                             FRESULT tmpret = FR_OK;
-                            printf("offset_4 = %d\r\n", offset_4);
+                            // printf("offset_4 = %d\r\n", offset_4);
 
                             tmpret = f_open(&tmpfile, rec_filename, FA_READ);
                             f_lseek(&tmpfile, offset_4);
-                            img_data = malloc(file_len_2); // memory allocation size = image size
+                            img_data = malloc(file_len_2);                                                // memory allocation size = image size
                             FRESULT readret = f_read(&tmpfile, img_data, file_len_2, (void *)&bytesread); //read file and move to img_size
-                            printf("[DEBUG] read RESULT : [%d]\r\n", readret);
+                            // printf("[DEBUG] read RESULT : [%d]\r\n", readret);
                             f_close(&tmpfile); //close file pointer
-                            
+
                             if(tmpret != FR_OK)
                             {
                                 printf("open file error len : %d\r\n", fn_size);
@@ -502,7 +527,7 @@ int main(void)
                                 uart_send_data(UART_NUM, open_err_msg, strlen(open_err_msg));
                             } else
                             {
-                                printf("[DEBUG] rec filename : [%s] \r\n", rec_filename);
+                                // printf("[DEBUG] rec filename : [%s] \r\n", rec_filename);
                                 for(int i = (file_len_2 - 1), j = 3; i >= 0; i--, j++)
                                 {
                                     // printf("0x%x ,",img_data[i]);
@@ -525,20 +550,46 @@ int main(void)
                                 ch_payload[3 + ch_len] = khecksum; // checksum
 
                                 uart_send_data(UART_NUM, ch_payload, (3 + ch_len + 1));
-                                printf("ch_len : %d\r\n", ch_len);
+                                // printf("ch_len : %d\r\n", ch_len);
                             }
                             free(img_data);
                         } else
                         {
-                            printf("[0x02] err checksum not match recv[0x%x] <-> calc[0x%x]\r\n",checksum,calcchecksum);
+                            printf("[0x02] err checksum not match recv[0x%x] <-> calc[0x%x]\r\n", checksum, calcchecksum);
                             char errmsg[14] = "CHECKSUM-ERROR";
                             uart_send_data(UART_NUM, errmsg, 14);
                         }
                         rec_flag = 0;
                         img_flag = 0;
-                        printf(" -------------finish line----------\r\n");
+                        // printf(" -------------finish line----------\r\n");
                     }
                     break;
+                case 5:
+                    ymdhms[rtcoffset++] = recv;
+                    if (rtcoffset >= 8)
+                    {
+                        //ymdhms [0~6] : ymdhms [7] : checksum
+                        uint8_t rtc_checksum = msg_type + length[0] + length[1];
+                        for (int i = 0 ; i < 7; i++){
+                            rtc_checksum += ymdhms[i];
+                        }
+                        if (ymdhms[7] == rtc_checksum){
+                            uint16_t recv_year = ymdhms[1] << 8 | ymdhms[0] ; // uint8_t [year] merge
+                            rtc_timer_set(recv_year,ymdhms[2],ymdhms[3],ymdhms[4],ymdhms[5],ymdhms[6]);
+                            printf("timer set OK [%d:%d:%d:%d:%d:%d]\r\n", recv_year,ymdhms[2],ymdhms[3],ymdhms[4],ymdhms[5],ymdhms[6]);
+                            uint8_t getRTC[4] = { 0x05, 0x00, 0x00, 0x05};
+                            uart_send_data(UART_NUM, getRTC, 4);
+                        }
+                        else{
+                            printf("error! ymdhms[7] = 0x%x #### rtc_checksum = 0x%x\r\n", ymdhms[7],rtc_checksum);
+                            char errmsg[14] = "CHECKSUM-ERROR";
+                            uart_send_data(UART_NUM,errmsg,14);
+                        }
+                        rtcoffset = 0;
+                        rec_flag = 0;
+                    }
+                    break;
+
             }
         }
         lcd_draw_picture(0, 0, 320, 240, g_ram_mux ? g_lcd_gram0 : g_lcd_gram1);

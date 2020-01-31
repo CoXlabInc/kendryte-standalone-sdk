@@ -2,6 +2,24 @@ import serial
 import math
 import time
 
+def makeYMDHMS(recvstr):
+    ymdhms_byte = bytearray()
+    year = int(recvstr[0:4]).to_bytes(2,"little")
+    print(year)
+    month = bytes([int(recvstr[4:6])])
+    day = bytes([int(recvstr[6:8])])
+    hour = bytes([int(recvstr[8:10])])
+    minute = bytes([int(recvstr[10:12])])
+    second = bytes([int(recvstr[12:14])])
+    ymdhms_byte.append(0x04)
+    ymdhms_byte.append(0x06)
+    ymdhms_byte.append(0x00)
+    ymdhms_byte = ymdhms_byte + year + month + day + hour + minute + second
+    rtc_check = checksumCalc(ymdhms_byte)
+    ymdhms_byte.append(rtc_check)
+    print(ymdhms_byte)
+    return ymdhms_byte
+
 def modcalc(filesize):
     mod = filesize % 1024
     modbyte = bytearray()
@@ -80,6 +98,7 @@ while 1:
     if (flag == 0):
         print (" [ 1 ] select 1 (GetImage)")
         print (" [ 3 ] select 3 (Snap)")
+        print (" [ 4 ] select 4 (setRTC)")
         print (" -------> ", end='')
         startflag = 1
         a = input()
@@ -88,7 +107,6 @@ while 1:
             filename = input()
             print (" [filesize] : ", end='')
             filesize = int(input())
-        
     else:
         a = '1'
 
@@ -102,11 +120,16 @@ while 1:
         ser.write(getImage[10:])
         payload = ser.read(1028) # 1024 + 1 + 2 + 1
         flag = 1
-    else:
+    elif (a == "3"):
         print("[Choose number [1 or 2 or 3] 1=row 2=mid 3=high ] -----------> ", end="")
         Snap = makeSnap( int(input()) & 0xff )
         ser.write(Snap)
         payload = ser.read(17)
+    elif (a == "4"):
+        print("[putdown Year Month day Hour Minute Second] ->>>>>>>>>>>> ",end="")
+        ymdhms = makeYMDHMS(input())
+        ser.write(ymdhms)
+        payload = ser.read(4)
     
     print("\n-------- read line -----------")    
     
@@ -136,7 +159,7 @@ while 1:
 
     elif (payload[0:1] == b'\x03') :            
         payloadlen = payloadlen + ( len(payload) - 4 )
-        print("현재 다운받은 파일크기 : %d/%d ----------- [%d%%]" % (payloadlen , filesize ,(payloadlen/filesize*100)))
+        print("download... : %d/%d ----------- [%d%%]" % (payloadlen , filesize ,(payloadlen/filesize*100)))
         offsetplate = offsetplate + 1024
         if (payloadlen + 1024 >= filesize):
             ofLength = modcalc(filesize)
