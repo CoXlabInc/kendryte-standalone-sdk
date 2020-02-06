@@ -53,3 +53,44 @@ __*all message is LSB first order & have Checksum in endline__
 |0x05|0x0000|
 
 # YOU CAN DEMO this program by mark1.py
+
+----------------------------------------
+## + 함수 설명
+#### 1. main.c
+> [1] io_mux_init()
+> ```
+> GPIO 설정용 함수
+> ```
+> [2] io_set_power()
+> ```
+> 보드 전압 설정용 함수
+> ```  
+> [3] rtc_init() , rtc_timer_set (날짜)
+> ```
+> RTC 설정 초기화 및 시간설정용 함수
+> ```  
+> [4] uart_init(UART_NUM)
+> ```
+> uart 통신 초기화 함수
+> * 가능한 가장 늦게 초기화하기를 권장
+> 다른 초기화함수보다 일찍 초기화하면, 장비 리셋 후 receive 레지스터에 알수없는 바이트가 남아있음.
+> ```  
+> [5] while문 이후
+> ```
+> 반복행위 = uart_receive_data (UART_NUM, &recv, 1)  
+> 1 Byte 데이터를 UART_NUM 장비에서 받아 recv변수에 저장한다.
+>  
+> 레지스터에 저장된 바이트메세지를 1 byte씩 순차적으로 분석한다.  
+> 
+> 예) 중계기에서 0x00\0x01\0x00\0x03 을 카메라 장비에 보낸다.
+> 1. 레지스터에 0x00\0x01\0x00\0x03이 쌓인다.  
+> 2. recv에 0x00이 들어오고, msg_type에 저장한 뒤 rec_flag를 1로 설정후 break한다.
+> 3. recv에 0x01이 들어오고, length[0] 에 저장 후 break한다.
+> 4. recv에 0x00이 들어오고 length[1]에 저장 후 break한다.
+> 5. length를 다 받았으므 앞에서 받은 msg_type인 0x00[Snap]에 따라 rec_flag를 2로 설정한 후 break한다.  
+> 6. recv에 0x03[가장 높은 압축]이 들어오고, format에 값을 저장한 뒤 rec_flag를 3으로 설정한 후 break한다. 
+>7. 앞에서받은 format에 따라 snap을 수행하고 결과에 따른 byte message를 만든다.
+>8. byte message를 uart_send_data를 이용해 중계기에 전송한다.  
+> 
+> 다른 바이트 메세지들도 같은 방식으로 분석해서 처리한다.
+> ```  
