@@ -51,12 +51,19 @@ __*all message is LSB first order & have Checksum in endline__
 | type | Length |
 |:--:|:--:|
 |0x05|0x0000|
-
-# YOU CAN DEMO this program by mark1.py
-
+----------------------------------------
+## mark1.py (demo Program)
+간단한 byte Message 전송 프로그램
+```
+> 기능 1 : Snap ( 사진찍기 요청 )
+> 기능 2 : Get Image ( 이미지 전송 요청 )
+> 기능 3 : Set RTC ( RTC 설정 요청 )
+```
+#### **Uart to USB 케이블을 사용해 시리얼 통신으로 메시지 전송.**
+----------------------------------------
 ----------------------------------------
 ## + 함수 설명
-#### 1. main.c
+#### **1. main.c**
 > [1] io_mux_init()
 > ```
 > GPIO 설정용 함수
@@ -94,3 +101,21 @@ __*all message is LSB first order & have Checksum in endline__
 > 
 > 다른 바이트 메세지들도 같은 방식으로 분석해서 처리한다.
 > ```  
+
+#### **2. stb_image.h**  
+>  [>> Original File Link <<](https://github.com/nothings/stb, "githublink")  
+>  ```
+>  24BIT bmp파일을 읽어서 RAW한 데이터로 만들어준다.
+>  [원본과의 차이점]
+>  1. 원본파일에서 fwrite, fopen같은 파일관련 함수를 *FATFS 파일시스템*에 맞게 f_write, f_open등으로 바꿔주었다.
+>  ```
+
+#### **3. tiny_jpeg.h**
+
+>  [>> Original File Link <<](https://github.com/nothings/stb, "githublink")  
+>  ```
+>  stbi_load 함수로 변환한 데이터를 jpeg파일로 만들어 저장해준다.
+>  [원본과의 차이점]
+>  1. 원본파일에서 fwrite, fopen같은 파일관련 함수를 *FATFS 파일시스템*에 맞게 변경
+> 2. 기존에 리턴값이 1또는 0이였는데, 파일크기를 반환하게 수정하였다.
+>  ```
