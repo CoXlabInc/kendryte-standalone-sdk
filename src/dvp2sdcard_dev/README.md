@@ -103,7 +103,7 @@ __*all message is LSB first order & have Checksum in endline__
 > ```  
 
 #### **2. stb_image.h**  
->  [>> Original File Link <<](https://github.com/nothings/stb, "githublink")  
+>  [>> Original File Link <<](https://github.com/nothings/stb "githublink")  
 >  ```
 >  24BIT bmp파일을 읽어서 RAW한 데이터로 만들어준다.
 >  [원본과의 차이점]
@@ -112,7 +112,7 @@ __*all message is LSB first order & have Checksum in endline__
 
 #### **3. tiny_jpeg.h**
 
->  [>> Original File Link <<](https://github.com/nothings/stb, "githublink")  
+>  [>> Original File Link <<](https://github.com/serge-rgb/TinyJPEG "githublink")  
 >  ```
 >  stbi_load 함수로 변환한 데이터를 jpeg파일로 만들어 저장해준다.
 >  [원본과의 차이점]
