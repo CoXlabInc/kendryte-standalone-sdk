@@ -783,7 +783,9 @@ int dmac_is_done(dmac_channel_number_t channel_num)
 
 void dmac_wait_done(dmac_channel_number_t channel_num)
 {
+    printf("dmac_wait_done debug 1\r\n");
     dmac_wait_idle(channel_num);
+    printf("dmac_wait_done debug 2\r\n");
 #if FIX_CACHE
     if(dmac_context[channel_num].dest_buffer)
     {
@@ -814,8 +816,13 @@ int dmac_is_idle(dmac_channel_number_t channel_num)
 
 void dmac_wait_idle(dmac_channel_number_t channel_num)
 {
-    while(!dmac_is_idle(channel_num))
+    // printf("dmac channel = %d\r\n",channel_num);
+    // printf("dmac status[pack2] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("dmac_wait_idle debug 1\r\n");
+    while(!dmac_is_idle(channel_num)){
+    }
         ;
+    // printf("dmac_wait_idle debug 2\r\n");
     dmac_channel_interrupt_clear(channel_num); /* clear interrupt */
 }
 

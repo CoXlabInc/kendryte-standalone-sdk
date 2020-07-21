@@ -105,6 +105,7 @@ static void io_mux_init(void)
     fpioa_set_function(29, FUNC_GPIOHS7);
 
     /* Init DVP IO map and function settings */
+    
     fpioa_set_function(42, FUNC_CMOS_RST);
     fpioa_set_function(44, FUNC_CMOS_PWDN);
     fpioa_set_function(46, FUNC_CMOS_XCLK);
@@ -115,13 +116,12 @@ static void io_mux_init(void)
     fpioa_set_function(40, FUNC_SCCB_SDA);
 
     /* Init SPI IO map and function settings */
-    fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
-    fpioa_set_function(36, FUNC_SPI0_SS3);
-    fpioa_set_function(39, FUNC_SPI0_SCLK);
-    fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
-
-    sysctl_set_spi0_dvp_data(1);
-
+    // fpioa_set_function(38, FUNC_GPIOHS0 + DCX_GPIONUM);
+    // fpioa_set_function(36, FUNC_SPI0_SS3);
+    // fpioa_set_function(39, FUNC_SPI0_SCLK);
+    // fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
+    
+    // sysctl_set_spi0_dvp_data(1);
     fpioa_set_function(16, FUNC_GPIOHS0 + KEY_GPIONUM);
 
     /* init io_mux for UART communication*/
@@ -146,11 +146,11 @@ static void io_mux_init(void)
     fpioa_set_function(9, FUNC_SCCB_SDA);
 
     /* Init SPI IO map and function settings */
-    fpioa_set_function(8, FUNC_GPIOHS0 + DCX_GPIONUM);
-    fpioa_set_function(6, FUNC_SPI0_SS3);
-    fpioa_set_function(7, FUNC_SPI0_SCLK);
+    // fpioa_set_function(8, FUNC_GPIOHS0 + DCX_GPIONUM);
+    // fpioa_set_function(6, FUNC_SPI0_SS3);
+    // fpioa_set_function(7, FUNC_SPI0_SCLK);
 
-    sysctl_set_spi0_dvp_data(1);
+    // sysctl_set_spi0_dvp_data(1);
 
     fpioa_set_function(26, FUNC_GPIOHS0 + KEY_GPIONUM);
 #endif
@@ -160,8 +160,11 @@ static void io_set_power(void)
 {
 #if BOARD_LICHEEDAN
     /* Set dvp and spi pin to 1.8V */
+<<<<<<< HEAD
+=======
     /* Dock power V33, bit_mic power V18
     */
+>>>>>>> c5d2e3bbbd2d195e5720912a2b4d3e97bebdc97e
     sysctl_set_power_mode(SYSCTL_POWER_BANK6, SYSCTL_POWER_V33);
     sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V33);
 
@@ -177,6 +180,7 @@ static void io_set_power(void)
 
 int main(void)
 {
+    printf("dmac status[0-1] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     rtc_init();
     // RTC INIT --------------------- for test
     rtc_timer_set(2019, 12, 20, 9, 0, 0);
@@ -223,8 +227,8 @@ int main(void)
 
     /* Set CPU and dvp clk */
     sysctl_pll_set_freq(SYSCTL_PLL0, 800000000UL);
-
-    uarths_init();
+    printf("dmac status[0-2] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    uarths_init();  
 
     io_mux_init();
     io_set_power();
@@ -235,13 +239,13 @@ int main(void)
     gpiohs_set_irq(KEY_GPIONUM, 2, irq_key);
 
     /* LCD init */
-    printf("LCD init\r\n");
-    lcd_init();
+    // printf("LCD init\r\n");
+    // lcd_init();
 #if BOARD_LICHEEDAN
 #if OV5640
     lcd_set_direction(DIR_YX_LRDU);
 #else
-    lcd_set_direction(DIR_YX_LRDU);
+    // lcd_set_direction(DIR_YX_LRDU);
 #endif
 #else
 #if OV5640
@@ -251,11 +255,12 @@ int main(void)
 #endif
 #endif
 
-    lcd_clear(BLACK);
+    // lcd_clear(BLACK);
 
     g_lcd_gram0 = (uint32_t *)iomem_malloc(320 * 240 * 2);
     g_lcd_gram1 = (uint32_t *)iomem_malloc(320 * 240 * 2);
     /* DVP init */
+    printf("dmac status[0-3] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     printf("DVP init\r\n");
 #if OV5640
     dvp_init(16);
@@ -280,16 +285,17 @@ int main(void)
     dvp_set_display_addr((uint32_t)g_lcd_gram0);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
     dvp_disable_auto();
-
+    printf("dmac status[0-4] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     /* DVP interrupt config */
     printf("DVP interrupt config\r\n");
+    printf("dmac status[0-5] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     plic_set_priority(IRQN_DVP_INTERRUPT, 1);
     plic_irq_register(IRQN_DVP_INTERRUPT, on_irq_dvp, NULL);
     plic_irq_enable(IRQN_DVP_INTERRUPT);
-
+    printf("dmac status[0-6] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     /* enable global interrupt */
     sysctl_enable_irq();
-
+    printf("dmac status[0-7] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     /* SD card init */
     if(sd_init())
     {
@@ -308,21 +314,35 @@ int main(void)
     printf("system start\r\n");
     g_ram_mux = 0;
     g_dvp_finish_flag = 0;
+    
     dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
+    
+    printf("dvp interrupt config ok\r\n");
 
     uart_init(UART_NUM);
     uart_configure(UART_NUM, 115200, 8, UART_STOP_1, UART_PARITY_NONE);
+
+    printf("UART init config ok\r\n");
+    printf("dmac status[0] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     uint16_t jpgnum = 0;
     while(1)
     {
+        int counting = 0;
         /* ai cal finish*/
-        while(g_dvp_finish_flag == 0)
-            ;
+        printf("dmac status[1] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+        while(g_dvp_finish_flag == 0){
+            printf("finish flag == 0  counting = %d\r\n",counting++);
+        }
+        printf("dmac status[2] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
         g_ram_mux ^= 0x01;
         g_dvp_finish_flag = 0;
+
+        // printf("dvp finish flag 1\r\n");
+        // printf("dvp finish flag 2\r\n");
         while(uart_receive_data(UART_NUM, &recv, 1))
         {
+            printf("receive data anything\r\n");
             switch(rec_flag)
             {
                 case 0: //type
@@ -331,10 +351,6 @@ int main(void)
                     break;
                 case 1: //Length
                     length[i++] = recv;
-                    // if (length[0] == 0x00){
-                    //     recv;
-                    //     break;
-                    // }
                     if(i >= RECV_LENTH)
                     {
                         i = 0;
@@ -381,7 +397,10 @@ int main(void)
                             //filename , fileout definition
 
                             //rgb565tobmp [16bit bitmap] rgb888tobmp [24bit bitmap]
+                            printf("pass1, g_ram_mux : %d \r\n",g_ram_mux);
+                            printf("dmac status[pack] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
                             rgb888tobmp((uint8_t *)(g_ram_mux ? g_lcd_gram0 : g_lcd_gram1), 320, 240, _T(filename2));
+                            printf("pass2 \r\n");
                             unsigned char *data = stbi_load(filename2, &width, &height, &num_components, 0);
                             //load data from bitmap file
                             if(!data)
@@ -498,7 +517,7 @@ int main(void)
                         // printf("[recv] %c\r\n", rec_filename[j - 1]);
                         if(j >= fn_size)
                         {
-                            j = 0;
+                            j = 0;  
                             img_flag = 4;
                             // printf("[debug] rec_filename down ok\r\n");
                         }
@@ -612,7 +631,7 @@ int main(void)
                     break;
             }
         }
-        lcd_draw_picture(0, 0, 320, 240, g_ram_mux ? g_lcd_gram0 : g_lcd_gram1);
+        // lcd_draw_picture(0, 0, 320, 240, g_ram_mux ? g_lcd_gram0 : g_lcd_gram1);
     }
     iomem_free(g_lcd_gram0);
     iomem_free(g_lcd_gram1);

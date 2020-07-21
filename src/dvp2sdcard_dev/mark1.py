@@ -47,7 +47,7 @@ def bytelen(hexvalue):
 def makeSnap(Format):
     Snap = bytearray()
     checksum = 0x00
-    
+
     msgType = 0x00
 
     Snap.append(msgType) #type
@@ -59,10 +59,10 @@ def makeSnap(Format):
     checksum = checksum + Format # add Format byte to checksum
     Snap.append(checksum) #Checksum
     print(Snap)
-    return Snap 
+    return Snap
 
-ser = serial.Serial(port='COM12', 
-        baudrate=115200, 
+ser = serial.Serial(port='COM12',
+        baudrate=115200,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_ONE,
         bytesize=serial.EIGHTBITS,
@@ -72,7 +72,7 @@ checksum = 0x33
 Snap = makeSnap(0x01)
 
 Type = bytearray(b'\x02')
-Length = bytearray(b'\x0f\x00') 
+Length = bytearray(b'\x0f\x00')
 offset = bytearray(b'\x00\x00\x00\x00') # start 0 offset
 ofLength = bytearray(b'\x00\x04') # 1024 byte 0x0400
 fnsize = bytearray(b'\x08')
@@ -123,19 +123,19 @@ while 1:
         ymdhms = makeYMDHMS(input())
         ser.write(ymdhms)
         payload = ser.read(4)
-    
-    print("\n-------- read line -----------")    
-    
+
+    print("\n-------- read line -----------")
+
 
     # for debug
     # print("[payload] : ",end="")
     # print(payload)
-    
+
 
 
     print("[ - Type - ] : ",end="")
     print(payload[0:1])
-    
+
     if (payload[0:1] == b'\x01') :
         print("----------------- receive Snap Finished ---")
         print("[ - Length - ] : ", end='')
@@ -150,20 +150,20 @@ while 1:
         print("[ - calcchecksum - ] : %x" % checksumCalc(payload[:16]))
 
 
-    elif (payload[0:1] == b'\x03') :            
+    elif (payload[0:1] == b'\x03') :
         payloadlen = payloadlen + ( len(payload) - 4 )
         print("download... : %d/%d ----------- [%d%%]" % (payloadlen , filesize ,(payloadlen/filesize*100)))
         offsetplate = offsetplate + 1024
         if (payloadlen + 1024 >= filesize):
             ofLength = modcalc(filesize)
-        
+
         if (payloadlen >= filesize):
             flag = 0
             offsetplate = 0
             payloadlen = 0
             ofLength = bytearray(b'\x00\x04')
             # startflag = 1
-        
+
         if (startflag):
             f = open(filename,"wb")
             startflag = 0
@@ -180,4 +180,3 @@ while 1:
         print("[ - payload - ] : ", end="")
         print(payload)
     print("----------------------------\n")
-
