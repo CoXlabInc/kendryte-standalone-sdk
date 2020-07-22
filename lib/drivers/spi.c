@@ -680,14 +680,14 @@ void spi_receive_data_normal_dma(dmac_channel_number_t dma_send_channel_num,
                                  spi_device_num_t spi_num, spi_chip_select_t chip_select, const void *cmd_buff,
                                  size_t cmd_len, void *rx_buff, size_t rx_len)
 {
-    printf("spi_receive_data_normal_dma debug 1\r\n");
+    // printf("spi_receive_data_normal_dma debug 1\r\n");
     configASSERT(spi_num < SPI_DEVICE_MAX && spi_num != 2);
 
     if(cmd_len == 0)
         spi_set_tmod(spi_num, SPI_TMOD_RECV);
     else
         spi_set_tmod(spi_num, SPI_TMOD_EEROM);
-    printf("spi_receive_data_normal_dma debug 2\r\n");
+    // printf("spi_receive_data_normal_dma debug 2\r\n");
     volatile spi_t *spi_handle = spi[spi_num];
 
     spi_handle->ctrlr1 = (uint32_t)(rx_len - 1);
@@ -695,36 +695,36 @@ void spi_receive_data_normal_dma(dmac_channel_number_t dma_send_channel_num,
     spi_handle->ssienr = 0x01;
     if(cmd_len)
         sysctl_dma_select((sysctl_dma_channel_t)dma_send_channel_num, SYSCTL_DMA_SELECT_SSI0_TX_REQ + spi_num * 2);
-    printf("spi_receive_data_normal_dma debug 3\r\n");
+    // printf("spi_receive_data_normal_dma debug 3\r\n");
     sysctl_dma_select((sysctl_dma_channel_t)dma_receive_channel_num, SYSCTL_DMA_SELECT_SSI0_RX_REQ + spi_num * 2);
-    printf("spi receive data normal_dma debug 3-1\r\n");
-    printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("spi receive data normal_dma debug 3-1\r\n");
+    // printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     dmac_set_single_mode(dma_receive_channel_num, (void *)(&spi_handle->dr[0]), rx_buff, DMAC_ADDR_NOCHANGE, DMAC_ADDR_INCREMENT,
                          DMAC_MSIZE_1, DMAC_TRANS_WIDTH_32, rx_len);
-    printf("spi receive data normal_dma debug 3-2\r\n");
-    printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
-    printf("spi_receive_data_normal_dma debug 4\r\n");
-    printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("spi receive data normal_dma debug 3-2\r\n");
+    // printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("spi_receive_data_normal_dma debug 4\r\n");
+    // printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     if(cmd_len)
         dmac_set_single_mode(dma_send_channel_num, cmd_buff, (void *)(&spi_handle->dr[0]), DMAC_ADDR_INCREMENT, DMAC_ADDR_NOCHANGE,
                              DMAC_MSIZE_4, DMAC_TRANS_WIDTH_32, cmd_len);
-    printf("spi_receive_data_normal_dma debug 4-1\r\n");
-    printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("spi_receive_data_normal_dma debug 4-1\r\n");
+    // printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     if(cmd_len == 0 && spi_get_frame_format(spi_num) == SPI_FF_STANDARD)
         spi[spi_num]->dr[0] = 0xffffffff;
-    printf("spi_receive_data_normal_dma debug 4-1-2\r\n");
-    printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
-    printf("1U << chip_select value = [%x]\r\n", (1U << chip_select));    
+    // printf("spi_receive_data_normal_dma debug 4-1-2\r\n");
+    // printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("1U << chip_select value = [%x]\r\n", (1U << chip_select));    
     spi_handle->ser = 1U << chip_select;
-    printf("spi_handle->ser : [%x]\r\n",spi_handle->ser);
-    printf("spi_receive_data_normal_dma debug 5\r\n");
-    printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("spi_handle->ser : [%x]\r\n",spi_handle->ser);
+    // printf("spi_receive_data_normal_dma debug 5\r\n");
+    // printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     if(cmd_len)
         dmac_wait_done(dma_send_channel_num);
-    printf("spi_receive_data_normal_dma debug 5-2\r\n");
-    printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("spi_receive_data_normal_dma debug 5-2\r\n");
+    // printf("dmac status = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     dmac_wait_done(dma_receive_channel_num);
-    printf("spi_receive_data_normal_dma debug 6\r\n");
+    // printf("spi_receive_data_normal_dma debug 6\r\n");
     spi_handle->ser = 0x00;
     spi_handle->ssienr = 0x00;
 }
@@ -734,7 +734,7 @@ void spi_receive_data_standard_dma(dmac_channel_number_t dma_send_channel_num,
                                    spi_device_num_t spi_num, spi_chip_select_t chip_select, const uint8_t *cmd_buff,
                                    size_t cmd_len, uint8_t *rx_buff, size_t rx_len)
 {
-    printf("spi_receive_data_standard_dma debug 1\r\n");
+    // printf("spi_receive_data_standard_dma debug 1\r\n");
     configASSERT(spi_num < SPI_DEVICE_MAX && spi_num != 2);
     volatile spi_t *spi_handle = spi[spi_num];
 
@@ -753,7 +753,7 @@ void spi_receive_data_standard_dma(dmac_channel_number_t dma_send_channel_num,
             dfs_offset = 0;
             break;
     }
-    printf("spi_receive_data_standard_dma debug 2\r\n");
+    // printf("spi_receive_data_standard_dma debug 2\r\n");
     uint32_t data_bit_length = (spi_handle->ctrlr0 >> dfs_offset) & 0x1F;
     spi_transfer_width_t frame_width = spi_get_frame_size(data_bit_length);
 
@@ -763,7 +763,7 @@ void spi_receive_data_standard_dma(dmac_channel_number_t dma_send_channel_num,
     uint32_t *read_buf;
     size_t v_recv_len;
     size_t v_cmd_len;
-    printf("spi_receive_data_standard_dma debug 3\r\n");
+    // printf("spi_receive_data_standard_dma debug 3\r\n");
     switch(frame_width)
     {
         case SPI_TRANS_INT:
@@ -803,9 +803,9 @@ void spi_receive_data_standard_dma(dmac_channel_number_t dma_send_channel_num,
             v_cmd_len = cmd_len;
             break;
     }
-    printf("spi_receive_data_standard_dma debug 5\r\n");
+    // printf("spi_receive_data_standard_dma debug 5\r\n");
     spi_receive_data_normal_dma(dma_send_channel_num, dma_receive_channel_num, spi_num, chip_select, write_cmd, v_cmd_len, read_buf, v_recv_len);
-    printf("spi_receive_data_standard_dma debug 6\r\n");
+    // printf("spi_receive_data_standard_dma debug 6\r\n");
     switch(frame_width)
     {
         case SPI_TRANS_INT:
@@ -821,7 +821,7 @@ void spi_receive_data_standard_dma(dmac_channel_number_t dma_send_channel_num,
                 rx_buff[i] = read_buf[i];
             break;
     }
-    printf("spi_receive_data_standard_dma debug 7\r\n");
+    // printf("spi_receive_data_standard_dma debug 7\r\n");
 #if FIX_CACHE
     iomem_free(write_cmd);
 #else

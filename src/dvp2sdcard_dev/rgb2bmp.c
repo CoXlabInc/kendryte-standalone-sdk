@@ -3,7 +3,7 @@
 #include "dmac.h"
 int rgb888tobmp(uint8_t *buf,int width,int height, const char *filename)
 {
-	printf("dmac status[111] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+	// printf("dmac status[111] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
 	FIL file;
 	FRESULT ret = FR_OK;
 	uint32_t ret_len = 0;
@@ -35,11 +35,11 @@ int rgb888tobmp(uint8_t *buf,int width,int height, const char *filename)
 	// bmfHdr.bfOffBits = sizeof(BitMapFileHeader) + sizeof(BitMapInfoHeader)+ sizeof(RgbQuad)*3;
 	bmfHdr.bfOffBits = sizeof(BitMapFileHeader) + sizeof(BitMapInfoHeader) ;
 
-	printf("dmac status[222] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+	// printf("dmac status[222] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
 	
 	//rgb565 data to rgb888 data
 	uint8_t *data = malloc( width * height * 3);
-	printf("malloc size : %d\r\n",width*height*3);
+	// printf("malloc size : %d\r\n",width*height*3);
 	for (int i = 0, j= 0; i < width* height *3 ; i+= 3, j+=2)
 	{
 		uint16_t buffer = ( buf[j+1] << 8 ) | ( buf[j] ); // ex) [0xF5][0x12]
@@ -58,22 +58,22 @@ int rgb888tobmp(uint8_t *buf,int width,int height, const char *filename)
 		data[i+1] = g;
 		data[i+2] = r;
 	}
-	printf("ok next\r\n");
+	// printf("ok next\r\n");
 
-	printf("dmac status[333] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+	// printf("dmac status[333] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     if ((ret = f_open(&file, filename, FA_CREATE_ALWAYS | FA_WRITE)) != FR_OK) 
     {
         printf("create file %s err[%d]\n", filename, ret);
         return ret;
     }
 
-	printf("ok nesxt2\r\n");
+	// printf("ok nesxt2\r\n");
     f_write(&file, &bmfHdr, sizeof(BitMapFileHeader), &ret_len);
     f_write(&file, &bmiHdr, sizeof(BitMapInfoHeader), &ret_len);
 	f_write(&file, data, bmiHdr.biSizeImage, &ret_len);
 	f_close(&file);
 	free(data);
-	printf("ok next3\r\n");
+	// printf("ok next3\r\n");
  
 	return 0;
 }

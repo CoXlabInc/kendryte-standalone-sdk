@@ -900,27 +900,27 @@ FRESULT move_window (	/* Returns FR_OK or FR_DISK_ERROR */
 	DWORD sector		/* Sector number to make appearance in the fs->win[] */
 )
 {
-	printf("[ move_window DEBUG - 1 ]\r\n");
+	// printf("[ move_window DEBUG - 1 ]\r\n");
 	FRESULT res = FR_OK;
 
 
 	if (sector != fs->winsect) {	/* Window offset changed? */
 #if !_FS_READONLY
-		printf("[ move_window DEBUG - 2 ]\r\n");
+		// printf("[ move_window DEBUG - 2 ]\r\n");
 		res = sync_window(fs);		/* Write-back changes */
-		printf("[ move_window DEBUG - 2-2 ]\r\n");
+		// printf("[ move_window DEBUG - 2-2 ]\r\n");
 #endif
 		if (res == FR_OK) {			/* Fill sector window with new data */
-			printf("[ move_window DEBUG - 3 ]\r\n");
+			// printf("[ move_window DEBUG - 3 ]\r\n");
 			if (disk_read(fs->drv, fs->win, sector, 1) != RES_OK) {
 				sector = 0xFFFFFFFF;	/* Invalidate window if data is not reliable */
 				res = FR_DISK_ERR;
 			}
-			printf("[ move_window DEBUG - 4 ]\r\n");
+			// printf("[ move_window DEBUG - 4 ]\r\n");
 			fs->winsect = sector;
 		}
 	}
-	printf("[ move_window DEBUG - 5 ]\r\n");
+	// printf("[ move_window DEBUG - 5 ]\r\n");
 	return res;
 }
 
@@ -2175,7 +2175,7 @@ FRESULT dir_find (	/* FR_OK(0):succeeded, !=0:error */
 )
 {
 
-	printf("[ dir_find DEBUG - 1 ]\r\n");
+	// printf("[ dir_find DEBUG - 1 ]\r\n");
 	FRESULT res;
 	FATFS *fs = dp->obj.fs;
 	BYTE c;
@@ -2184,15 +2184,15 @@ FRESULT dir_find (	/* FR_OK(0):succeeded, !=0:error */
 #endif
 
 	res = dir_sdi(dp, 0);			/* Rewind directory object */
-	printf("[ dir_find DEBUG - 2 ]\r\n");
+	// printf("[ dir_find DEBUG - 2 ]\r\n");
 	if (res != FR_OK) return res;
 #if _FS_EXFAT
 	if (fs->fs_type == FS_EXFAT) {	/* On the exFAT volume */
-		printf("[ dir_find DEBUG - 3 ]\r\n");
+		// printf("[ dir_find DEBUG - 3 ]\r\n");
 		BYTE nc;
 		UINT di, ni;
 		WORD hash = xname_sum(fs->lfnbuf);		/* Hash value of the name to find */
-		printf("[ dir_find DEBUG - 4 ]\r\n");
+		// printf("[ dir_find DEBUG - 4 ]\r\n");
 		while ((res = dir_read(dp, 0)) == FR_OK) {	/* Read an item */
 			if (ld_word(fs->dirbuf + XDIR_NameHash) != hash) continue;	/* Skip the comparison if hash value mismatched */
 			for (nc = fs->dirbuf[XDIR_NumName], di = SZDIRE * 2, ni = 0; nc; nc--, di += 2, ni++) {	/* Compare the name */
@@ -2201,26 +2201,26 @@ FRESULT dir_find (	/* FR_OK(0):succeeded, !=0:error */
 			}
 			if (nc == 0 && !fs->lfnbuf[ni]) break;	/* Name matched? */
 		}
-		printf("[ dir_find DEBUG - 5 ]\r\n");
+		// printf("[ dir_find DEBUG - 5 ]\r\n");
 		return res;
 	}
 #endif
 	/* On the FAT12/16/32 volume */
 #if _USE_LFN != 0
 	ord = sum = 0xFF; dp->blk_ofs = 0xFFFFFFFF;	/* Reset LFN sequence */
-	printf("[ dir_find DEBUG - 6 ]\r\n");
+	// printf("[ dir_find DEBUG - 6 ]\r\n");
 #endif
 	do {
-		printf("[ dir_find DEBUG - 7 ]\r\n");
+		// printf("[ dir_find DEBUG - 7 ]\r\n");
 		res = move_window(fs, dp->sect);
-		printf("[ dir_find DEBUG - 7-1 ]\r\n");
+		// printf("[ dir_find DEBUG - 7-1 ]\r\n");
 		if (res != FR_OK) break;
 		c = dp->dir[DIR_Name];
-		printf("[ dir_find DEBUG - 8 ]\r\n");
+		// printf("[ dir_find DEBUG - 8 ]\r\n");
 		if (c == 0) { res = FR_NO_FILE; break; }	/* Reached to end of table */
 #if _USE_LFN != 0	/* LFN configuration */
 		dp->obj.attr = a = dp->dir[DIR_Attr] & AM_MASK;
-		printf("[ dir_find DEBUG - 9 ]\r\n");
+		// printf("[ dir_find DEBUG - 9 ]\r\n");
 		if (c == DDEM || ((a & AM_VOL) && a != AM_LFN)) {	/* An entry without valid data */
 			ord = 0xFF; dp->blk_ofs = 0xFFFFFFFF;	/* Reset LFN sequence */
 		} else {
@@ -2235,12 +2235,12 @@ FRESULT dir_find (	/* FR_OK(0):succeeded, !=0:error */
 					ord = (c == ord && sum == dp->dir[LDIR_Chksum] && cmp_lfn(fs->lfnbuf, dp->dir)) ? ord - 1 : 0xFF;
 				}
 			} else {					/* An SFN entry is found */
-				printf("[ dir_find DEBUG - 10 ]\r\n");
+				// printf("[ dir_find DEBUG - 10 ]\r\n");
 				if (!ord && sum == sum_sfn(dp->dir)) break;	/* LFN matched? */
-				printf("[ dir_find DEBUG - 11 ]\r\n");
+				// printf("[ dir_find DEBUG - 11 ]\r\n");
 				if (!(dp->fn[NSFLAG] & NS_LOSS) && !mem_cmp(dp->dir, dp->fn, 11)) break;	/* SFN matched? */
 				ord = 0xFF; dp->blk_ofs = 0xFFFFFFFF;	/* Reset LFN sequence */
-				printf("[ dir_find DEBUG - 12 ]\r\n");
+				// printf("[ dir_find DEBUG - 12 ]\r\n");
 			}
 		}
 #else		/* Non LFN configuration */
@@ -2249,7 +2249,7 @@ FRESULT dir_find (	/* FR_OK(0):succeeded, !=0:error */
 #endif
 		res = dir_next(dp, 0);	/* Next entry */
 	} while (res == FR_OK);
-	printf("[ dir_find DEBUG - end ]\r\n");
+	// printf("[ dir_find DEBUG - end ]\r\n");
 	return res;
 }
 
@@ -2787,29 +2787,29 @@ FRESULT follow_path (	/* FR_OK(0): successful, !=0: error code */
 	const TCHAR* path	/* Full-path string to find a file or directory */
 )
 {
-	printf("[ fp DEBUG - 1 ]\r\n");
+	// printf("[ fp DEBUG - 1 ]\r\n");
 	FRESULT res;
 	BYTE ns;
 	_FDID *obj = &dp->obj;
 	FATFS *fs = obj->fs;
-	printf("[ fp DEBUG - 2 ]\r\n");
+	// printf("[ fp DEBUG - 2 ]\r\n");
 	
 
 #if _FS_RPATH != 0
 	if (*path != '/' && *path != '\\') {	/* Without heading separator */
 		obj->sclust = fs->cdir;				/* Start from the current directory */
-		printf("[ fp DEBUG - 3 ]\r\n");
+		// printf("[ fp DEBUG - 3 ]\r\n");
 	} else
 #endif
 	{										/* With heading separator */
 		while (*path == '/' || *path == '\\') path++;	/* Strip heading separator */
 		obj->sclust = 0;					/* Start from the root directory */
-		printf("[ fp DEBUG - 4 ]\r\n");
+		// printf("[ fp DEBUG - 4 ]\r\n");
 	}
 #if _FS_EXFAT && _FS_RPATH != 0
 	if (fs->fs_type == FS_EXFAT && obj->sclust) {	/* Retrieve the sub-directory status if needed */
 		DIR dj;
-		printf("[ fp DEBUG - 5 ]\r\n");
+		// printf("[ fp DEBUG - 5 ]\r\n");
 		obj->c_scl = fs->cdc_scl;
 		obj->c_size = fs->cdc_size;
 		obj->c_ofs = fs->cdc_ofs;
@@ -2817,29 +2817,29 @@ FRESULT follow_path (	/* FR_OK(0): successful, !=0: error code */
 		if (res != FR_OK) return res;
 		obj->objsize = ld_dword(fs->dirbuf + XDIR_FileSize);
 		obj->stat = fs->dirbuf[XDIR_GenFlags] & 2;
-		printf("[ fp DEBUG - 6 ]\r\n");
+		// printf("[ fp DEBUG - 6 ]\r\n");
 	}
 #endif
 
 	if ((UINT)*path < ' ') {				/* Null path name is the origin directory itself */
 		dp->fn[NSFLAG] = NS_NONAME;
 		res = dir_sdi(dp, 0);
-		printf("[ fp DEBUG - 7 ]\r\n");
+		// printf("[ fp DEBUG - 7 ]\r\n");
 
 	} else {								/* Follow path */
-		printf("[ fp DEBUG - 8 ]\r\n");
+		// printf("[ fp DEBUG - 8 ]\r\n");
 		for (;;) {
-			printf("[ fp DEBUG - 8-1 ]\r\n");
+			// printf("[ fp DEBUG - 8-1 ]\r\n");
 			res = create_name(dp, &path);	/* Get a segment name of the path */
-			printf("[ fp DEBUG - 8-1-1 ]\r\n");
+			// printf("[ fp DEBUG - 8-1-1 ]\r\n");
 			if (res != FR_OK) break;
-			printf("[ fp DEBUG - 8-1-1-1 ]\r\n");
+			// printf("[ fp DEBUG - 8-1-1-1 ]\r\n");
 			res = dir_find(dp);				/* Find an object with the segment name */
-			printf("[ fp DEBUG - 8-1-2 ]\r\n");
+			// printf("[ fp DEBUG - 8-1-2 ]\r\n");
 			ns = dp->fn[NSFLAG];
-			printf("[ fp DEBUG - 8-2 ]\r\n");
+			// printf("[ fp DEBUG - 8-2 ]\r\n");
 			if (res != FR_OK) {				/* Failed to find the object */
-				printf("[ fp DEBUG - 8-3 ]\r\n");
+				// printf("[ fp DEBUG - 8-3 ]\r\n");
 				if (res == FR_NO_FILE) {	/* Object is not found */
 					if (_FS_RPATH && (ns & NS_DOT)) {	/* If dot entry is not exist, stay there */
 						if (!(ns & NS_LAST)) continue;	/* Continue to follow if not last segment */
@@ -2849,36 +2849,36 @@ FRESULT follow_path (	/* FR_OK(0): successful, !=0: error code */
 						if (!(ns & NS_LAST)) res = FR_NO_PATH;	/* Adjust error code if not last segment */
 					}
 				}
-				printf("[ fp DEBUG - 8-4 ]\r\n");
+				// printf("[ fp DEBUG - 8-4 ]\r\n");
 				break;
 			}
 			if (ns & NS_LAST) break;			/* Last segment matched. Function completed. */
 			/* Get into the sub-directory */
 			if (!(obj->attr & AM_DIR)) {		/* It is not a sub-directory and cannot follow */
-				printf("[ fp DEBUG - 8-5 ]\r\n");
+				// printf("[ fp DEBUG - 8-5 ]\r\n");
 				res = FR_NO_PATH; break;
 			}
 #if _FS_EXFAT
 			if (fs->fs_type == FS_EXFAT) {
-				printf("[ fp DEBUG - 8-6 ]\r\n");
+				// printf("[ fp DEBUG - 8-6 ]\r\n");
 				obj->c_scl = obj->sclust;		/* Save containing directory information for next dir */
 				obj->c_size = ((DWORD)obj->objsize & 0xFFFFFF00) | obj->stat;
 				obj->c_ofs = dp->blk_ofs;
-				printf("[ fp DEBUG - 8-7 ]\r\n");
+				// printf("[ fp DEBUG - 8-7 ]\r\n");
 				obj->sclust = ld_dword(fs->dirbuf + XDIR_FstClus);	/* Open next directory */
-				printf("[ fp DEBUG - 8-8 ]\r\n");
+				// printf("[ fp DEBUG - 8-8 ]\r\n");
 				obj->stat = fs->dirbuf[XDIR_GenFlags] & 2;
 				obj->objsize = ld_qword(fs->dirbuf + XDIR_FileSize);
-				printf("[ fp DEBUG - 8-9 ]\r\n");
+				// printf("[ fp DEBUG - 8-9 ]\r\n");
 			} else
 #endif
 			{
-				printf("[ fp DEBUG - 8-10 ]\r\n");
+				// printf("[ fp DEBUG - 8-10 ]\r\n");
 				obj->sclust = ld_clust(fs, fs->win + dp->dptr % SS(fs));	/* Open next directory */
-				printf("[ fp DEBUG - 8-11 ]\r\n");
+				// printf("[ fp DEBUG - 8-11 ]\r\n");
 			}
 		}
-		printf("[ fp DEBUG - 9 ]\r\n");
+		// printf("[ fp DEBUG - 9 ]\r\n");
 	}
 
 	return res;
@@ -3297,10 +3297,10 @@ FRESULT f_open (
 #if !_FS_READONLY
 	DWORD dw, cl, bcs, clst, sc;
 	FSIZE_t ofs;
-	printf("[ D E B U G 1 ]\r\n");
+	// printf("[ D E B U G 1 ]\r\n");
 #endif
 	DEF_NAMBUF
-	printf("[ D E B U G 2 ]\r\n");
+	// printf("[ D E B U G 2 ]\r\n");
 
 
 	if (!fp) return FR_INVALID_OBJECT;
@@ -3309,33 +3309,33 @@ FRESULT f_open (
 	mode &= _FS_READONLY ? FA_READ : FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_CREATE_NEW | FA_OPEN_ALWAYS | FA_OPEN_APPEND | FA_SEEKEND;
 	res = find_volume(&path, &fs, mode);
 	if (res == FR_OK) {
-		printf("[ D E B U G 3 ]\r\n");
+		// printf("[ D E B U G 3 ]\r\n");
 		dj.obj.fs = fs;
-		printf("[ D E B U G 3-01]\r\n");
+		// printf("[ D E B U G 3-01]\r\n");
 		INIT_NAMBUF(fs);
-		printf("[ D E B U G 3-02]\r\n");
+		// printf("[ D E B U G 3-02]\r\n");
 		res = follow_path(&dj, path);	/* Follow the file path */
-		printf("[ D E B U G 3-1]\r\n");
+		// printf("[ D E B U G 3-1]\r\n");
 #if !_FS_READONLY	/* R/W configuration */
 		if (res == FR_OK) {
-			printf("[ D E B U G 3-2]\r\n");
+			// printf("[ D E B U G 3-2]\r\n");
 			if (dj.fn[NSFLAG] & NS_NONAME) {	/* Origin directory itself? */
-				printf("[ D E B U G 4 ]\r\n");
+				// printf("[ D E B U G 4 ]\r\n");
 				res = FR_INVALID_NAME;
 			}
 #if _FS_LOCK != 0
 			else {
-				printf("[ D E B U G 5 ]\r\n");
+				// printf("[ D E B U G 5 ]\r\n");
 				res = chk_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
 			}
 #endif
 		}
-		printf("[ D E B U G 3-2]\r\n");
+		// printf("[ D E B U G 3-2]\r\n");
 		/* Create or Open a file */
 		if (mode & (FA_CREATE_ALWAYS | FA_OPEN_ALWAYS | FA_CREATE_NEW)) {
-			printf("[ D E B U G 3-3]\r\n");
+			// printf("[ D E B U G 3-3]\r\n");
 			if (res != FR_OK) {					/* No file, create new */
-				printf("[ D E B U G 6 ]\r\n");
+				// printf("[ D E B U G 6 ]\r\n");
 				if (res == FR_NO_FILE)			/* There is no file to open, create a new entry */
 #if _FS_LOCK != 0
 					res = enq_lock() ? dir_register(&dj) : FR_TOO_MANY_OPEN_FILES;
@@ -3343,10 +3343,10 @@ FRESULT f_open (
 					res = dir_register(&dj);
 #endif
 				mode |= FA_CREATE_ALWAYS;		/* File is created */
-				printf("[ D E B U G 7 ]\r\n");
+				// printf("[ D E B U G 7 ]\r\n");
 			}
 			else {								/* Any object is already existing */
-				printf("[ D E B U G 8 ]\r\n");
+				// printf("[ D E B U G 8 ]\r\n");
 				if (dj.obj.attr & (AM_RDO | AM_DIR)) {	/* Cannot overwrite it (R/O or DIR) */
 					res = FR_DENIED;
 				} else {
@@ -3355,7 +3355,7 @@ FRESULT f_open (
 			}
 			if (res == FR_OK && (mode & FA_CREATE_ALWAYS)) {	/* Truncate it if overwrite mode */
 				dw = GET_FATTIME();
-				printf("[ D E B U G 9 ]\r\n");
+				// printf("[ D E B U G 9 ]\r\n");
 #if _FS_EXFAT
 				if (fs->fs_type == FS_EXFAT) {
 					/* Get current allocation info */
@@ -3363,7 +3363,7 @@ FRESULT f_open (
 					fp->obj.sclust = ld_dword(fs->dirbuf + XDIR_FstClus);
 					fp->obj.objsize = ld_qword(fs->dirbuf + XDIR_FileSize);
 					fp->obj.stat = fs->dirbuf[XDIR_GenFlags] & 2;
-					printf("[ D E B U G 10 ]\r\n");
+					// printf("[ D E B U G 10 ]\r\n");
 					/* Initialize directory entry block */
 					st_dword(fs->dirbuf + XDIR_CrtTime, dw);	/* Set created time */
 					fs->dirbuf[XDIR_CrtTime10] = 0;
@@ -3375,11 +3375,11 @@ FRESULT f_open (
 					st_qword(fs->dirbuf + XDIR_ValidFileSize, 0);
 					fs->dirbuf[XDIR_GenFlags] = 1;
 					res = store_xdir(&dj);
-					printf("[ D E B U G 11 ]\r\n");
+					// printf("[ D E B U G 11 ]\r\n");
 					if (res == FR_OK && fp->obj.sclust) {		/* Remove the cluster chain if exist */
 						res = remove_chain(&fp->obj, fp->obj.sclust, 0);
 						fs->last_clst = fp->obj.sclust - 1;		/* Reuse the cluster hole */
-						printf("[ D E B U G 12 ]\r\n");
+						// printf("[ D E B U G 12 ]\r\n");
 					}
 				} else
 #endif
@@ -3392,7 +3392,7 @@ FRESULT f_open (
 					st_clust(fs, dj.dir, 0);			/* Reset file allocation info */
 					st_dword(dj.dir + DIR_FileSize, 0);
 					fs->wflag = 1;
-					printf("[ D E B U G 13 ]\r\n");
+					// printf("[ D E B U G 13 ]\r\n");
 
 					if (cl) {							/* Remove the cluster chain if exist */
 						dw = fs->winsect;
@@ -3412,7 +3412,7 @@ FRESULT f_open (
 				} else {
 					if ((mode & FA_WRITE) && (dj.obj.attr & AM_RDO)) { /* R/O violation */
 						res = FR_DENIED;
-						printf("[ D E B U G 14 ]\r\n");
+						// printf("[ D E B U G 14 ]\r\n");
 					}
 				}
 			}
@@ -3422,7 +3422,7 @@ FRESULT f_open (
 				mode |= FA_MODIFIED;
 			fp->dir_sect = fs->winsect;			/* Pointer to the directory entry */
 			fp->dir_ptr = dj.dir;
-			printf("[ D E B U G 15 ]\r\n");
+			// printf("[ D E B U G 15 ]\r\n");
 #if _FS_LOCK != 0
 			fp->obj.lockid = inc_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
 			if (!fp->obj.lockid) res = FR_INT_ERR;
@@ -3445,7 +3445,7 @@ FRESULT f_open (
 			if (fs->fs_type == FS_EXFAT) {
 				fp->obj.sclust = ld_dword(fs->dirbuf + XDIR_FstClus);		/* Get allocation info */
 				fp->obj.objsize = ld_qword(fs->dirbuf + XDIR_FileSize);
-				printf("[ D E B U G 16 ]\r\n");
+				// printf("[ D E B U G 16 ]\r\n");
 				fp->obj.stat = fs->dirbuf[XDIR_GenFlags] & 2;
 				fp->obj.c_scl = dj.obj.sclust;
 				fp->obj.c_size = ((DWORD)dj.obj.objsize & 0xFFFFFF00) | dj.obj.stat;
@@ -3453,7 +3453,7 @@ FRESULT f_open (
 			} else
 #endif
 			{
-				printf("[ D E B U G 17 ]\r\n");
+				// printf("[ D E B U G 17 ]\r\n");
 				fp->obj.sclust = ld_clust(fs, dj.dir);				/* Get allocation info */
 				fp->obj.objsize = ld_dword(dj.dir + DIR_FileSize);
 			}
@@ -3474,7 +3474,7 @@ FRESULT f_open (
 				fp->fptr = fp->obj.objsize;			/* Offset to seek */
 				bcs = (DWORD)fs->csize * SS(fs);	/* Cluster size in byte */
 				clst = fp->obj.sclust;				/* Follow the cluster chain */
-				printf("[ D E B U G 18 ]\r\n");
+				// printf("[ D E B U G 18 ]\r\n");
 				for (ofs = fp->obj.objsize; res == FR_OK && ofs > bcs; ofs -= bcs) {
 					clst = get_fat(&fp->obj, clst);
 					if (clst <= 1) res = FR_INT_ERR;
@@ -3486,7 +3486,7 @@ FRESULT f_open (
 						res = FR_INT_ERR;
 					} else {
 						fp->sect = sc + (DWORD)(ofs / SS(fs));
-						printf("[ D E B U G 19 ]\r\n");
+						// printf("[ D E B U G 19 ]\r\n");
 #if !_FS_TINY
 						if (disk_read(fs->drv, fp->buf, fp->sect, 1) != RES_OK) res = FR_DISK_ERR;
 #endif
@@ -3495,12 +3495,12 @@ FRESULT f_open (
 			}
 #endif
 		}
-		printf("[ D E B U G 20 ]\r\n");
+		// printf("[ D E B U G 20 ]\r\n");
 		FREE_NAMBUF();
 	}
 
 	if (res != FR_OK) fp->obj.fs = 0;	/* Invalidate file object on error */
-	printf("[ D E B U G 21 ]\r\n");
+	// printf("[ D E B U G 21 ]\r\n");
 	LEAVE_FF(fs, res);
 }
 

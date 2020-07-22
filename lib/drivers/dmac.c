@@ -783,9 +783,9 @@ int dmac_is_done(dmac_channel_number_t channel_num)
 
 void dmac_wait_done(dmac_channel_number_t channel_num)
 {
-    printf("dmac_wait_done debug 1\r\n");
+    // printf("dmac_wait_done debug 1\r\n");
     dmac_wait_idle(channel_num);
-    printf("dmac_wait_done debug 2\r\n");
+    // printf("dmac_wait_done debug 2\r\n");
 #if FIX_CACHE
     if(dmac_context[channel_num].dest_buffer)
     {

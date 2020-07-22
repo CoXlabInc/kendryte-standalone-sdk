@@ -121,7 +121,7 @@ static void io_mux_init(void)
     // fpioa_set_function(39, FUNC_SPI0_SCLK);
     // fpioa_set_function(37, FUNC_GPIOHS0 + RST_GPIONUM);
     
-    // sysctl_set_spi0_dvp_data(1);
+    sysctl_set_spi0_dvp_data(1); //don't touch this
     fpioa_set_function(16, FUNC_GPIOHS0 + KEY_GPIONUM);
 
     /* init io_mux for UART communication*/
@@ -175,7 +175,7 @@ static void io_set_power(void)
 
 int main(void)
 {
-    printf("dmac status[0-1] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("dmac status[0-1] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     rtc_init();
     // RTC INIT --------------------- for test
     rtc_timer_set(2019, 12, 20, 9, 0, 0);
@@ -222,7 +222,7 @@ int main(void)
 
     /* Set CPU and dvp clk */
     sysctl_pll_set_freq(SYSCTL_PLL0, 800000000UL);
-    printf("dmac status[0-2] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("dmac status[0-2] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     uarths_init();  
 
     io_mux_init();
@@ -240,7 +240,7 @@ int main(void)
 #if OV5640
     lcd_set_direction(DIR_YX_LRDU);
 #else
-    // lcd_set_direction(DIR_YX_LRDU);
+    lcd_set_direction(DIR_YX_LRDU);
 #endif
 #else
 #if OV5640
@@ -255,7 +255,7 @@ int main(void)
     g_lcd_gram0 = (uint32_t *)iomem_malloc(320 * 240 * 2);
     g_lcd_gram1 = (uint32_t *)iomem_malloc(320 * 240 * 2);
     /* DVP init */
-    printf("dmac status[0-3] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("dmac status[0-3] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     printf("DVP init\r\n");
 #if OV5640
     dvp_init(16);
@@ -280,17 +280,17 @@ int main(void)
     dvp_set_display_addr((uint32_t)g_lcd_gram0);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
     dvp_disable_auto();
-    printf("dmac status[0-4] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("dmac status[0-4] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     /* DVP interrupt config */
     printf("DVP interrupt config\r\n");
-    printf("dmac status[0-5] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("dmac status[0-5] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     plic_set_priority(IRQN_DVP_INTERRUPT, 1);
     plic_irq_register(IRQN_DVP_INTERRUPT, on_irq_dvp, NULL);
     plic_irq_enable(IRQN_DVP_INTERRUPT);
-    printf("dmac status[0-6] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("dmac status[0-6] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     /* enable global interrupt */
     sysctl_enable_irq();
-    printf("dmac status[0-7] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("dmac status[0-7] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     /* SD card init */
     if(sd_init())
     {
@@ -319,17 +319,17 @@ int main(void)
     uart_configure(UART_NUM, 115200, 8, UART_STOP_1, UART_PARITY_NONE);
 
     printf("UART init config ok\r\n");
-    printf("dmac status[0] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+    // printf("dmac status[0] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
     uint16_t jpgnum = 0;
     while(1)
     {
         int counting = 0;
         /* ai cal finish*/
-        printf("dmac status[1] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+        // printf("dmac status[1] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
         while(g_dvp_finish_flag == 0){
-            printf("finish flag == 0  counting = %d\r\n",counting++);
+            // printf("finish flag == 0  counting = %d\r\n",counting++);
         }
-        printf("dmac status[2] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+        // printf("dmac status[2] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
         g_ram_mux ^= 0x01;
         g_dvp_finish_flag = 0;
 
@@ -392,10 +392,10 @@ int main(void)
                             //filename , fileout definition
 
                             //rgb565tobmp [16bit bitmap] rgb888tobmp [24bit bitmap]
-                            printf("pass1, g_ram_mux : %d \r\n",g_ram_mux);
-                            printf("dmac status[pack] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
+                            // printf("pass1, g_ram_mux : %d \r\n",g_ram_mux);
+                            // printf("dmac status[pack] = %d\r\n",dmac_is_idle(DMAC_CHANNEL1));
                             rgb888tobmp((uint8_t *)(g_ram_mux ? g_lcd_gram0 : g_lcd_gram1), 320, 240, _T(filename2));
-                            printf("pass2 \r\n");
+                            // printf("pass2 \r\n");
                             unsigned char *data = stbi_load(filename2, &width, &height, &num_components, 0);
                             //load data from bitmap file
                             if(!data)

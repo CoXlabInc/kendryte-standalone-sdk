@@ -81,11 +81,11 @@ static void sd_write_data_dma(uint8_t *data_buff)
 
 static void sd_read_data_dma(uint8_t *data_buff)
 {
-	printf("[ sd_read_data_dma DEBUG -1  ]\r\n");
+	// printf("[ sd_read_data_dma DEBUG -1  ]\r\n");
     spi_init(SPI_DEVICE_1, SPI_WORK_MODE_0, SPI_FF_STANDARD, 8, 0);
-	printf("[ sd_read_data_dma DEBUG -2  ]\r\n");
+	// printf("[ sd_read_data_dma DEBUG -2  ]\r\n");
     spi_receive_data_standard_dma(-1, DMAC_CHANNEL1, SPI_DEVICE_1, SPI_CHIP_SELECT_3,NULL, 0, data_buff,128 * 4);
-	printf("[ sd_read_data_dma DEBUG -3  ]\r\n");
+	// printf("[ sd_read_data_dma DEBUG -3  ]\r\n");
 }
 
 /*
@@ -529,7 +529,7 @@ uint8_t sd_write_sector(uint8_t *data_buff, uint32_t sector, uint32_t count)
 uint8_t sd_read_sector_dma(uint8_t *data_buff, uint32_t sector, uint32_t count)
 {
 	uint8_t frame[2], flag;
-	printf("[ sd_read_sector DEBUG -1  ]\r\n");
+	// printf("[ sd_read_sector DEBUG -1  ]\r\n");
 	/*!< Send CMD17 (SD_CMD17) to read one block */
 	if (count == 1) {
 		flag = 0;
@@ -538,28 +538,28 @@ uint8_t sd_read_sector_dma(uint8_t *data_buff, uint32_t sector, uint32_t count)
 		flag = 1;
 		sd_send_cmd(SD_CMD18, sector, 0);
 	}
-	printf("[ sd_read_sector DEBUG -2  ]\r\n");
+	// printf("[ sd_read_sector DEBUG -2  ]\r\n");
 	/*!< Check if the SD acknowledged the read block command: R1 response (0x00: no errors) */
 	if (sd_get_response() != 0x00) {
 		sd_end_cmd();
 		return 0xFF;
 	}
-	printf("[ sd_read_sector DEBUG -3  ]\r\n");
+	// printf("[ sd_read_sector DEBUG -3  ]\r\n");
 	while (count) {
-		printf("[ sd_read_sector DEBUG -3-1  ]\r\n");
+		// printf("[ sd_read_sector DEBUG -3-1  ]\r\n");
 		if (sd_get_response() != SD_START_DATA_SINGLE_BLOCK_READ)
 			break;
 		/*!< Read the SD block data : read NumByteToRead data */
-		printf("[ sd_read_sector DEBUG -3-3  ]\r\n");
+		// printf("[ sd_read_sector DEBUG -3-3  ]\r\n");
 		sd_read_data_dma(data_buff);
-		printf("[ sd_read_sector DEBUG -3-4  ]\r\n");
+		// printf("[ sd_read_sector DEBUG -3-4  ]\r\n");
 		/*!< Get CRC bytes (not really needed by us, but required by SD) */
 		sd_read_data(frame, 2);
-		printf("[ sd_read_sector DEBUG -3-5  ]\r\n");
+		// printf("[ sd_read_sector DEBUG -3-5  ]\r\n");
 		data_buff += 512;
 		count--;
 	}
-	printf("[ sd_read_sector DEBUG -4  ]\r\n");
+	// printf("[ sd_read_sector DEBUG -4  ]\r\n");
 	sd_end_cmd();
 	if (flag) {
 		sd_send_cmd(SD_CMD12, 0, 0);
@@ -567,7 +567,7 @@ uint8_t sd_read_sector_dma(uint8_t *data_buff, uint32_t sector, uint32_t count)
 		sd_end_cmd();
 		sd_end_cmd();
 	}
-	printf("[ sd_read_sector DEBUG -5  ]\r\n");
+	// printf("[ sd_read_sector DEBUG -5  ]\r\n");
 	/*!< Returns the reponse */
 	return count > 0 ? 0xFF : 0;
 }
