@@ -160,11 +160,6 @@ static void io_set_power(void)
 {
 #if BOARD_LICHEEDAN
     /* Set dvp and spi pin to 1.8V */
-<<<<<<< HEAD
-=======
-    /* Dock power V33, bit_mic power V18
-    */
->>>>>>> c5d2e3bbbd2d195e5720912a2b4d3e97bebdc97e
     sysctl_set_power_mode(SYSCTL_POWER_BANK6, SYSCTL_POWER_V33);
     sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V33);
 
